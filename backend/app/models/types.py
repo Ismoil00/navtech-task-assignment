@@ -2,7 +2,7 @@ from enum import StrEnum
 
 from sqlalchemy import Enum
 
-from app.domain.enums import ApplicationStatus, UserRole
+from app.domain.enums import ApplicationStatus, PaymentStatus, UserRole
 
 
 def pg_enum(enum_cls: type[StrEnum], name: str) -> Enum:
@@ -12,3 +12,4 @@ def pg_enum(enum_cls: type[StrEnum], name: str) -> Enum:
 
 user_role_enum = pg_enum(UserRole, "user_role")
 application_status_enum = pg_enum(ApplicationStatus, "application_status")
+payment_status_enum = pg_enum(PaymentStatus, "payment_status")

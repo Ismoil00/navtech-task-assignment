@@ -5,8 +5,11 @@ from sqlalchemy import DateTime, ForeignKey, Index, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums import ApplicationStatus
+from app.models.attachment import Attachment
 from app.models.base import Base, TimestampMixin
+from app.models.payment import Payment
 from app.models.service_type import ServiceType
+from app.models.status_history import ApplicationStatusHistory
 from app.models.types import application_status_enum
 from app.models.user import User
 
@@ -43,3 +46,9 @@ class Application(TimestampMixin, Base):
     # lazy="raise": в async-коде связи грузим только явно (selectinload/joinedload)
     applicant: Mapped[User] = relationship(lazy="raise")
     service_type: Mapped[ServiceType] = relationship(lazy="raise")
+    attachment: Mapped[Attachment | None] = relationship(lazy="raise")
+    payments: Mapped[list[Payment]] = relationship(lazy="raise", order_by=Payment.created_at)
+    history: Mapped[list[ApplicationStatusHistory]] = relationship(
+        lazy="raise",
+        order_by=(ApplicationStatusHistory.created_at, ApplicationStatusHistory.id),
+    )

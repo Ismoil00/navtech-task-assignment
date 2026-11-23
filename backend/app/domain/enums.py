@@ -13,3 +13,10 @@ class ApplicationStatus(StrEnum):
     APPROVED = "approved"  # одобрена (финальный статус)
     REJECTED = "rejected"  # отклонена, деньги возвращены (финальный статус)
     RETURNED = "returned"  # возвращена на доработку, повторная оплата не нужна
+
+
+class PaymentStatus(StrEnum):
+    PROCESSING = "processing"  # запрос в шлюз отправлен, ответа ещё нет
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"  # можно повторить новой попыткой
+    REFUNDED = "refunded"  # деньги возвращены при отклонении заявки
