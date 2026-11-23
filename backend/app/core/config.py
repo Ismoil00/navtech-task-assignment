@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     postgres_host: str = "localhost"
     postgres_port: int = 5432
 
+    # Пароли демо-пользователей, которых создаёт scripts/seed.py
+    seed_applicant_password: str | None = None
+    seed_operator_password: str | None = None
+
     @property
     def database_url(self) -> str:
         # URL.create сам экранирует спецсимволы в пароле
