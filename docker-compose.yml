@@ -1,0 +1,50 @@
+name: applications-service
+
+# Настройки берутся из .env.example (есть в репозитории) и поверх из .env (если создан).
+x-env-files: &env-files
+  env_file:
+    - path: .env.example
+      required: true
+    - path: .env
+      required: false
+
+services:
+  db:
+    image: postgres:16-alpine
+    <<: *env-files
+    ports:
+      # 5433 на хосте, чтобы не конфликтовать с локально установленным PostgreSQL
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    <<: *env-files
+    environment:
+      # Внутри docker-сети база всегда доступна по имени сервиса,
+      # даже если в .env указан локальный хост для запуска без Docker.
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
