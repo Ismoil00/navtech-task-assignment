@@ -1,0 +1,8 @@
+# Все текстовые файлы храним с LF: shell-скрипты с CRLF ломаются внутри Linux-контейнеров
+* text=auto eol=lf
+
+*.sh text eol=lf
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
