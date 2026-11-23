@@ -65,6 +65,13 @@ async def update_application(
     return ApplicationRead.build(*await service.update(user, application_id, payload))
 
 
+@router.post("/{application_id}/submit", response_model=ApplicationRead)
+async def submit_application(
+    application_id: uuid.UUID, user: ApplicantDep, service: ApplicationServiceDep
+):
+    return ApplicationRead.build(*await service.submit(user, application_id))
+
+
 @router.delete("/{application_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_application(
     application_id: uuid.UUID, user: ApplicantDep, service: ApplicationServiceDep

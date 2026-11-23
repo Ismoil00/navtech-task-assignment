@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import BusinessValidationError, ConflictError, NotFoundError
-from app.domain.enums import AllowedAction, ApplicationStatus
+from app.domain.enums import AllowedAction, ApplicationAction, ApplicationStatus
 from app.domain.status_machine import DELETABLE_STATUSES, EDITABLE_STATUSES, STATUS_LABELS
 from app.models import Application, ApplicationStatusHistory, User
 from app.repositories.application_repository import ApplicationRepository
@@ -12,6 +12,7 @@ from app.repositories.service_type_repository import ServiceTypeRepository
 from app.repositories.status_history_repository import StatusHistoryRepository
 from app.schemas.application import ApplicationCreate, ApplicationUpdate
 from app.services import allowed_actions
+from app.services.application_workflow import ApplicationWorkflow
 from app.services.pagination import PageResult, page_offset
 
 
@@ -23,6 +24,7 @@ class ApplicationService:
         self._applications = ApplicationRepository(session)
         self._service_types = ServiceTypeRepository(session)
         self._history = StatusHistoryRepository(session)
+        self._workflow = ApplicationWorkflow(session)
 
     async def list_own(
         self, applicant: User, *, status: ApplicationStatus | None, page: int, page_size: int
@@ -87,6 +89,18 @@ class ApplicationService:
 
         for field, value in changes.items():
             setattr(application, field, value)
+        await self._session.commit()
+        return await self._details(application.id)
+
+    async def submit(
+        self, applicant: User, application_id: uuid.UUID
+    ) -> tuple[Application, list[AllowedAction]]:
+        """Отправка на рассмотрение — первая или повторная после возврата.
+
+        Повторная отправка не требует новой оплаты: проверяется уже успешный платёж.
+        """
+        application = await self._get_own(applicant, application_id, for_update=True)
+        await self._workflow.apply(application, ApplicationAction.SUBMIT, applicant)
         await self._session.commit()
         return await self._details(application.id)
 

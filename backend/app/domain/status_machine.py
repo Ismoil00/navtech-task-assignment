@@ -82,6 +82,15 @@ class InvalidTransitionError(ConflictError):
     code = "INVALID_STATUS_TRANSITION"
 
 
+def ensure_role_allowed(action: ApplicationAction, role: UserRole) -> None:
+    """Действие в принципе не для этой роли (например, заявитель одобряет) — 403."""
+    if action not in _ACTIONS_BY_ROLE[role]:
+        raise ForbiddenError(
+            f"Действие «{_ACTION_LABELS[action]}» недоступно для вашей роли",
+            code="ACTION_FORBIDDEN_FOR_ROLE",
+        )
+
+
 def get_transition(
     status: ApplicationStatus,
     action: ApplicationAction,
@@ -93,11 +102,7 @@ def get_transition(
     Порядок проверок: сначала роль (действие в принципе не для этой роли — 403),
     затем статус (действие не из этого статуса — 409), затем комментарий (422).
     """
-    if action not in _ACTIONS_BY_ROLE[role]:
-        raise ForbiddenError(
-            f"Действие «{_ACTION_LABELS[action]}» недоступно для вашей роли",
-            code="ACTION_FORBIDDEN_FOR_ROLE",
-        )
+    ensure_role_allowed(action, role)
 
     transition = _TRANSITIONS_BY_KEY.get((status, action))
     if transition is None:
