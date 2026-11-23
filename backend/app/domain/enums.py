@@ -15,6 +15,16 @@ class ApplicationStatus(StrEnum):
     RETURNED = "returned"  # возвращена на доработку, повторная оплата не нужна
 
 
+class ApplicationAction(StrEnum):
+    """Действия, меняющие статус заявки."""
+
+    PAY = "pay"
+    SUBMIT = "submit"
+    APPROVE = "approve"
+    REJECT = "reject"
+    RETURN = "return"
+
+
 class PaymentStatus(StrEnum):
     PROCESSING = "processing"  # запрос в шлюз отправлен, ответа ещё нет
     SUCCEEDED = "succeeded"
