@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     # Регион для номеров без кода страны: "93 123 4567" -> +992931234567
     phone_default_region: str = "TJ"
 
+    # Каталог для загруженных документов. В Docker это именованный том.
+    upload_dir: str = "uploads"
+
     # Адреса фронтенда через запятую, которым разрешено обращаться к API из браузера
     cors_origins: str
 

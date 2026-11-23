@@ -31,8 +31,12 @@ services:
       # даже если в .env указан локальный хост для запуска без Docker.
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
+      UPLOAD_DIR: /data/uploads
     ports:
       - "8000:8000"
+    volumes:
+      # документы хранятся в томе и переживают пересоздание контейнера
+      - uploads:/data/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -48,3 +52,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:
