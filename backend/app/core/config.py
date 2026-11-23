@@ -40,6 +40,13 @@ class Settings(BaseSettings):
     # true в продакшене за HTTPS; локально по http cookie с Secure браузер не сохранит
     refresh_cookie_secure: bool = False
 
+    # Адреса фронтенда через запятую, которым разрешено обращаться к API из браузера
+    cors_origins: str
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
     @property
     def database_url(self) -> str:
         # URL.create сам экранирует спецсимволы в пароле
