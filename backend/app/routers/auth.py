@@ -3,14 +3,17 @@ from typing import Annotated
 from fastapi import APIRouter, Cookie, Response, status
 
 from app.core.config import get_settings
-from app.routers.deps import AuthServiceDep
+from app.routers.deps import AuthServiceDep, CurrentUserDep
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.schemas.user import UserRead
 from app.services.auth_service import AuthSession
 
 settings = get_settings()
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+# Вход, обновление и выход доступны без access-токена
+public_router = APIRouter(prefix="/auth", tags=["auth"])
+# Остальное — только для вошедших пользователей
+protected_router = APIRouter(prefix="/auth", tags=["auth"])
 
 # refresh-токен живёт в httpOnly cookie: JavaScript его не видит,
 # а браузер отправляет его только на эндпоинты /api/auth
@@ -38,21 +41,26 @@ def _token_response(auth: AuthSession) -> TokenResponse:
     )
 
 
-@router.post("/login", response_model=TokenResponse)
+@public_router.post("/login", response_model=TokenResponse)
 async def login(payload: LoginRequest, response: Response, service: AuthServiceDep):
     auth = await service.login(payload.username, payload.password, payload.portal)
     _set_refresh_cookie(response, auth)
     return _token_response(auth)
 
 
-@router.post("/refresh", response_model=TokenResponse)
+@public_router.post("/refresh", response_model=TokenResponse)
 async def refresh(response: Response, service: AuthServiceDep, refresh_token: RefreshCookie = None):
     auth = await service.refresh(refresh_token)
     _set_refresh_cookie(response, auth)
     return _token_response(auth)
 
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@public_router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(response: Response, service: AuthServiceDep, refresh_token: RefreshCookie = None):
     await service.logout(refresh_token)
     response.delete_cookie(settings.refresh_cookie_name, path=_COOKIE_PATH)
+
+
+@protected_router.get("/me", response_model=UserRead)
+async def me(user: CurrentUserDep):
+    return user

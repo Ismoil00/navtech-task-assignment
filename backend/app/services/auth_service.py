@@ -8,6 +8,7 @@ from app.core.errors import ForbiddenError, UnauthorizedError
 from app.core.security import (
     AccessToken,
     create_access_token,
+    decode_access_token,
     dummy_password_hash,
     generate_refresh_token,
     hash_refresh_token,
@@ -87,6 +88,18 @@ class AuthService:
         token.replaced_by_id = new_token.id
         await self._session.commit()
         return auth
+
+    async def authenticate(self, access_token: str) -> User:
+        """Пользователь по access-токену.
+
+        Пользователь каждый раз читается из БД: заблокированный пользователь
+        теряет доступ сразу, не дожидаясь истечения токена.
+        """
+        payload = decode_access_token(access_token)
+        user = await self._users.get_by_id(payload.user_id)
+        if user is None or not user.is_active:
+            raise UnauthorizedError("Пользователь не найден или заблокирован", code="INVALID_TOKEN")
+        return user
 
     async def logout(self, raw_token: str | None) -> None:
         if not raw_token:
