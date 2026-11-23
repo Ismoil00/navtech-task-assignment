@@ -10,6 +10,7 @@ from app.core.errors import ForbiddenError, UnauthorizedError
 from app.domain.enums import UserRole
 from app.models import User
 from app.services.auth_service import AuthService
+from app.services.service_type_service import ServiceTypeService
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
@@ -18,7 +19,12 @@ def get_auth_service(session: SessionDep) -> AuthService:
     return AuthService(session)
 
 
+def get_service_type_service(session: SessionDep) -> ServiceTypeService:
+    return ServiceTypeService(session)
+
+
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
+ServiceTypeServiceDep = Annotated[ServiceTypeService, Depends(get_service_type_service)]
 
 # auto_error=False: отсутствие токена отдаём в нашем формате ошибок, а не стандартным 403
 _bearer = HTTPBearer(auto_error=False)

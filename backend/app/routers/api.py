@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.routers import auth, health
+from app.routers import auth, health, service_types
 from app.routers.deps import get_current_user
 
 
@@ -16,6 +16,7 @@ def build_api_router() -> APIRouter:
     # Проверка роли добавляется на роутерах конкретного кабинета.
     protected = APIRouter(dependencies=[Depends(get_current_user)])
     protected.include_router(auth.protected_router)
+    protected.include_router(service_types.router)
 
     api.include_router(protected)
     return api
