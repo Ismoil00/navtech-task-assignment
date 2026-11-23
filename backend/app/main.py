@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
-from app.api.routes import health
 from app.core.config import get_settings
+from app.routers import health
 
 
 def create_app() -> FastAPI:
