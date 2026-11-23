@@ -3,7 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.core.error_handlers import register_error_handlers
+from app.core.middleware import RequestSizeLimitMiddleware
+from app.domain.documents import MAX_DOCUMENT_SIZE
 from app.routers.api import build_api_router
+
+# запас на служебную часть multipart-запроса (границы, заголовки части)
+_MULTIPART_OVERHEAD = 64 * 1024
 
 
 def create_app() -> FastAPI:
@@ -16,6 +21,11 @@ def create_app() -> FastAPI:
         redoc_url=None,
     )
 
+    app.add_middleware(
+        RequestSizeLimitMiddleware, max_body_size=MAX_DOCUMENT_SIZE + _MULTIPART_OVERHEAD
+    )
+    # CORS добавляется последним, чтобы быть внешним слоем: тогда и ответ 413
+    # от фильтра размера получит CORS-заголовки и браузер покажет его фронтенду
     app.add_middleware(
         CORSMiddleware,
         # Явный список адресов: с allow_credentials "*" использовать нельзя

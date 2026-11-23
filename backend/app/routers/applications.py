@@ -1,10 +1,17 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
+from fastapi.responses import StreamingResponse
 
 from app.domain.enums import ApplicationStatus
-from app.routers.deps import ApplicantDep, ApplicationServiceDep, require_applicant
+from app.routers.deps import (
+    ApplicantDep,
+    ApplicationServiceDep,
+    AttachmentServiceDep,
+    require_applicant,
+)
+from app.routers.files import document_response, read_upload
 from app.schemas.application import (
     ApplicationCreate,
     ApplicationListItem,
@@ -63,3 +70,23 @@ async def delete_application(
     application_id: uuid.UUID, user: ApplicantDep, service: ApplicationServiceDep
 ):
     await service.delete(user, application_id)
+
+
+@router.put("/{application_id}/file", response_model=ApplicationRead)
+async def upload_document(
+    application_id: uuid.UUID,
+    file: Annotated[UploadFile, File(description="PDF, JPG или PNG, не больше 5 МБ")],
+    user: ApplicantDep,
+    service: AttachmentServiceDep,
+):
+    result = await service.upload(
+        user, application_id, filename=file.filename, chunks=read_upload(file)
+    )
+    return ApplicationRead.build(*result)
+
+
+@router.get("/{application_id}/file", response_class=StreamingResponse)
+async def download_document(
+    application_id: uuid.UUID, user: ApplicantDep, service: AttachmentServiceDep
+):
+    return document_response(*await service.download_own(user, application_id))

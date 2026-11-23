@@ -10,8 +10,10 @@ from app.core.errors import ForbiddenError, UnauthorizedError
 from app.domain.enums import UserRole
 from app.models import User
 from app.services.application_service import ApplicationService
+from app.services.attachment_service import AttachmentService
 from app.services.auth_service import AuthService
 from app.services.service_type_service import ServiceTypeService
+from app.storage import FileStorage, get_file_storage
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
@@ -28,9 +30,16 @@ def get_application_service(session: SessionDep) -> ApplicationService:
     return ApplicationService(session)
 
 
+def get_attachment_service(
+    session: SessionDep, storage: Annotated[FileStorage, Depends(get_file_storage)]
+) -> AttachmentService:
+    return AttachmentService(session, storage)
+
+
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 ServiceTypeServiceDep = Annotated[ServiceTypeService, Depends(get_service_type_service)]
 ApplicationServiceDep = Annotated[ApplicationService, Depends(get_application_service)]
+AttachmentServiceDep = Annotated[AttachmentService, Depends(get_attachment_service)]
 
 # auto_error=False: отсутствие токена отдаём в нашем формате ошибок, а не стандартным 403
 _bearer = HTTPBearer(auto_error=False)

@@ -32,6 +32,9 @@ class LocalFileStorage:
             while chunk := await file.read(_CHUNK_SIZE):
                 yield chunk
 
+    async def exists(self, key: str) -> bool:
+        return await self._path(key).is_file()
+
     async def delete(self, key: str) -> None:
         await self._path(key).unlink(missing_ok=True)
 

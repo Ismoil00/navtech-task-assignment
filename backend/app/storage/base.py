@@ -15,5 +15,8 @@ class FileStorage(Protocol):
     def read(self, key: str) -> AsyncIterator[bytes]:
         """Отдаёт файл кусками, не загружая его целиком в память."""
 
+    async def exists(self, key: str) -> bool:
+        """Есть ли файл. Проверяется до отправки заголовков ответа при скачивании."""
+
     async def delete(self, key: str) -> None:
         """Удаляет файл; отсутствие файла ошибкой не считается."""
