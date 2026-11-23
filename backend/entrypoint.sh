@@ -10,9 +10,7 @@ fi
 echo "Применяю миграции БД..."
 alembic upgrade head
 
-if [ "${SEED_DEMO_USERS:-false}" = "true" ]; then
-    echo "Создаю демо-пользователей..."
-    python -m scripts.seed
-fi
+echo "Создаю демо-пользователей..."
+python -m scripts.seed
 
 exec uvicorn app.main:app --host 0.0.0.0 --port 8000
