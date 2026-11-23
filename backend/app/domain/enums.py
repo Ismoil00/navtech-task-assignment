@@ -25,6 +25,23 @@ class ApplicationAction(StrEnum):
     RETURN = "return"
 
 
+class AllowedAction(StrEnum):
+    """Что пользователь может сделать с заявкой прямо сейчас.
+
+    Сервер отдаёт этот список вместе с заявкой, а интерфейс показывает только
+    соответствующие кнопки — правила не дублируются на фронтенде.
+    """
+
+    EDIT = "edit"
+    UPLOAD_FILE = "upload_file"
+    DELETE = "delete"
+    PAY = "pay"
+    SUBMIT = "submit"
+    APPROVE = "approve"
+    REJECT = "reject"
+    RETURN = "return"
+
+
 class PaymentStatus(StrEnum):
     PROCESSING = "processing"  # запрос в шлюз отправлен, ответа ещё нет
     SUCCEEDED = "succeeded"

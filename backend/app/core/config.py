@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     # true в продакшене за HTTPS; локально по http cookie с Secure браузер не сохранит
     refresh_cookie_secure: bool = False
 
+    # Регион для номеров без кода страны: "93 123 4567" -> +992931234567
+    phone_default_region: str = "TJ"
+
     # Адреса фронтенда через запятую, которым разрешено обращаться к API из браузера
     cors_origins: str
 
