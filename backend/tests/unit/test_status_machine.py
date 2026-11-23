@@ -102,14 +102,14 @@ def test_allowed_transitions(status: Status, role: Role, expected: list[Action])
 
 
 def test_edit_and_delete_rules() -> None:
-    assert EDITABLE_STATUSES == {Status.DRAFT, Status.RETURNED}
-    assert DELETABLE_STATUSES == {Status.DRAFT}
+    assert {Status.DRAFT, Status.RETURNED} == EDITABLE_STATUSES
+    assert {Status.DRAFT} == DELETABLE_STATUSES
 
 
 def test_operator_sees_only_sent_applications() -> None:
-    assert OPERATOR_VISIBLE_STATUSES == {
+    assert {
         Status.SUBMITTED,
         Status.APPROVED,
         Status.REJECTED,
         Status.RETURNED,
-    }
+    } == OPERATOR_VISIBLE_STATUSES
