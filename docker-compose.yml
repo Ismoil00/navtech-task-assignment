@@ -50,6 +50,15 @@ services:
       timeout: 3s
       retries: 20
 
+  frontend:
+    build: ./frontend
+    <<: *env-files
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
 volumes:
   pgdata:
   uploads:
