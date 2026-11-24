@@ -1,9 +1,7 @@
 import {
   Alert,
-  Anchor,
   Box,
   Button,
-  Group,
   List,
   Paper,
   PasswordInput,
@@ -16,13 +14,7 @@ import {
   Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import {
-  IconAlertCircle,
-  IconCreditCard,
-  IconFileCheck,
-  IconShieldCheck,
-  IconUserCheck,
-} from '@tabler/icons-react';
+import { IconAlertCircle, IconCreditCard, IconFileCheck, IconUserCheck } from '@tabler/icons-react';
 import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 
@@ -32,12 +24,6 @@ import { useAppSelector } from '../../app/hooks';
 import { asApiError } from '../../lib/notify';
 import { homePath } from '../../lib/routes';
 import { selectUser } from './authSlice';
-
-// Демо-пользователи из backend/scripts/seed.py — подсказка для проверяющих
-const DEMO_ACCOUNTS: Record<UserRole, string[]> = {
-  applicant: ['applicant1', 'applicant2', 'applicant3'],
-  operator: ['operator1', 'operator2'],
-};
 
 const PORTAL_OPTIONS = [
   { value: 'applicant', label: 'Заявитель' },
@@ -73,11 +59,6 @@ export function LoginPage() {
       setError(asApiError(caught)?.message ?? 'Не удалось войти. Попробуйте ещё раз');
     }
   });
-
-  const fillDemo = (username: string) => {
-    form.setValues({ username, password: `${username}pass` });
-    setError(null);
-  };
 
   return (
     <SimpleGrid cols={{ base: 1, md: 2 }} spacing={0} mih="100vh">
@@ -153,25 +134,6 @@ export function LoginPage() {
                 </Button>
               </Stack>
             </form>
-
-            <Paper bg="indigo.0" p="sm" radius="md">
-              <Group gap={6} mb={4}>
-                <IconShieldCheck size={16} color="var(--mantine-color-indigo-7)" />
-                <Text size="sm" fw={600} c="indigo.8">
-                  Демо-доступ
-                </Text>
-              </Group>
-              <Text size="xs" c="dimmed" mb={6}>
-                Пароль — логин с окончанием «pass». Нажмите, чтобы подставить:
-              </Text>
-              <Group gap="xs">
-                {DEMO_ACCOUNTS[portal].map((username) => (
-                  <Anchor key={username} component="button" type="button" size="sm" onClick={() => fillDemo(username)}>
-                    {username}
-                  </Anchor>
-                ))}
-              </Group>
-            </Paper>
           </Stack>
         </Paper>
       </Stack>
