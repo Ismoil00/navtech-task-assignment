@@ -15,6 +15,7 @@ import { routes } from '../../lib/routes';
 import { ApplicationForm } from './ApplicationForm';
 import { ApplicationProgress } from './ApplicationProgress';
 import { DocumentSection } from './DocumentSection';
+import { PaymentSection } from './PaymentSection';
 
 export function ApplicationPage() {
   const { id = '' } = useParams();
@@ -46,17 +47,25 @@ export function ApplicationPage() {
 
       <OperatorDecisionBanner application={application} />
       <ApplicationProgress application={application} />
+      {application.payment?.status === 'processing' && <PaymentStatusPoller id={application.id} />}
 
       <Grid gutter="lg">
         <Grid.Col span={{ base: 12, md: 8 }}>
           <Stack gap="lg">
             <DetailsSection application={application} />
             <DocumentSection application={application} />
+            <PaymentSection application={application} />
           </Stack>
         </Grid.Col>
       </Grid>
     </>
   );
+}
+
+/** Пока платёж в обработке, перечитываем заявку раз в 2 секунды до окончательного статуса. */
+function PaymentStatusPoller({ id }: { id: string }) {
+  useGetMyApplicationQuery(id, { pollingInterval: 2000, skipPollingIfUnfocused: false });
+  return null;
 }
 
 function DetailsSection({ application }: { application: Application }) {
