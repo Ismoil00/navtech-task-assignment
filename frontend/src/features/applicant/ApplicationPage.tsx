@@ -14,6 +14,7 @@ import { notifyError, notifySuccess } from '../../lib/notify';
 import { routes } from '../../lib/routes';
 import { ApplicationForm } from './ApplicationForm';
 import { ApplicationProgress } from './ApplicationProgress';
+import { DocumentSection } from './DocumentSection';
 
 export function ApplicationPage() {
   const { id = '' } = useParams();
@@ -50,6 +51,7 @@ export function ApplicationPage() {
         <Grid.Col span={{ base: 12, md: 8 }}>
           <Stack gap="lg">
             <DetailsSection application={application} />
+            <DocumentSection application={application} />
           </Stack>
         </Grid.Col>
       </Grid>
