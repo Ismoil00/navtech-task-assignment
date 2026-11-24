@@ -35,6 +35,14 @@ export const applicationsApi = api.injectEndpoints({
       query: ({ id, changes }) => ({ url: `/applications/${id}`, method: 'PATCH', data: changes }),
       invalidatesTags: (_result, _error, { id }) => [{ type: 'Application', id }, 'MyApplications'],
     }),
+    submitApplication: build.mutation<Application, string>({
+      query: (id) => ({ url: `/applications/${id}/submit`, method: 'POST' }),
+      invalidatesTags: (_result, _error, id) => [{ type: 'Application', id }, 'MyApplications'],
+    }),
+    deleteApplication: build.mutation<void, string>({
+      query: (id) => ({ url: `/applications/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['MyApplications'],
+    }),
   }),
 });
 
@@ -52,4 +60,6 @@ export const {
   useGetMyApplicationQuery,
   useCreateApplicationMutation,
   useUpdateApplicationMutation,
+  useSubmitApplicationMutation,
+  useDeleteApplicationMutation,
 } = applicationsApi;

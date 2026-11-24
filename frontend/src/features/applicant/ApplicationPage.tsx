@@ -1,14 +1,20 @@
 import { Alert, Anchor, Button, Grid, Group, Paper, Skeleton, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft, IconMessageExclamation, IconPencil } from '@tabler/icons-react';
+import { modals } from '@mantine/modals';
+import { IconArrowLeft, IconMessageExclamation, IconPencil, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 
-import { useGetMyApplicationQuery, useUpdateApplicationMutation } from '../../api/applicationsApi';
+import {
+  useDeleteApplicationMutation,
+  useGetMyApplicationQuery,
+  useUpdateApplicationMutation,
+} from '../../api/applicationsApi';
 import type { Application } from '../../api/types';
 import { ApplicationDetails } from '../../components/ApplicationDetails';
 import { PageHeader } from '../../components/PageHeader';
 import { ErrorState } from '../../components/States';
 import { StatusBadge } from '../../components/StatusBadge';
+import { StatusTimeline } from '../../components/StatusTimeline';
 import { formatDateTime } from '../../lib/format';
 import { notifyError, notifySuccess } from '../../lib/notify';
 import { routes } from '../../lib/routes';
@@ -16,6 +22,7 @@ import { ApplicationForm } from './ApplicationForm';
 import { ApplicationProgress } from './ApplicationProgress';
 import { DocumentSection } from './DocumentSection';
 import { PaymentSection } from './PaymentSection';
+import { SubmitSection } from './SubmitSection';
 
 export function ApplicationPage() {
   const { id = '' } = useParams();
@@ -42,7 +49,12 @@ export function ApplicationPage() {
       <PageHeader
         title={application.service_type.name}
         description={`Заявка от ${formatDateTime(application.created_at)}`}
-        actions={<StatusBadge status={application.status} size="lg" />}
+        actions={
+          <Group gap="sm">
+            {application.allowed_actions.includes('delete') && <DeleteDraftButton id={application.id} />}
+            <StatusBadge status={application.status} size="lg" />
+          </Group>
+        }
       />
 
       <OperatorDecisionBanner application={application} />
@@ -55,10 +67,42 @@ export function ApplicationPage() {
             <DetailsSection application={application} />
             <DocumentSection application={application} />
             <PaymentSection application={application} />
+            <SubmitSection application={application} />
           </Stack>
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 4 }}>
+          <StatusTimeline history={application.history} />
         </Grid.Col>
       </Grid>
     </>
+  );
+}
+
+function DeleteDraftButton({ id }: { id: string }) {
+  const navigate = useNavigate();
+  const [deleteApplication, { isLoading }] = useDeleteApplicationMutation();
+
+  const confirm = () =>
+    modals.openConfirmModal({
+      title: 'Удалить черновик?',
+      children: <Text size="sm">Черновик пропадёт из списка заявок. Это действие нельзя отменить.</Text>,
+      labels: { confirm: 'Удалить', cancel: 'Отмена' },
+      confirmProps: { color: 'red' },
+      onConfirm: async () => {
+        try {
+          await deleteApplication(id).unwrap();
+          notifySuccess('Черновик удалён');
+          navigate(routes.myApplications, { replace: true });
+        } catch (error) {
+          notifyError(error);
+        }
+      },
+    });
+
+  return (
+    <Button variant="subtle" color="red" size="xs" leftSection={<IconTrash size={14} />} loading={isLoading} onClick={confirm}>
+      Удалить черновик
+    </Button>
   );
 }
 
