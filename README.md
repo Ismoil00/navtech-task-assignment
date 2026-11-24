@@ -42,27 +42,39 @@ docker compose up
 
 ### Тесты
 
-```bash
-# backend: unit + интеграционные (API + настоящий PostgreSQL, отдельная база applications_test)
-docker compose run --rm backend pytest
+Unit- и интеграционные тесты backend (API + настоящий PostgreSQL в отдельной базе
+`applications_test`, рабочие данные не затрагиваются):
 
-# сквозной сценарий в браузере (Playwright); первая сборка скачивает Chromium
+```bash
+docker compose run --rm backend pytest
+```
+
+Frontend проверяется линтером и сборкой: `cd frontend && npm ci && npm run lint && npm run build`.
+Те же проверки backend и frontend запускаются в GitHub Actions (`.github/workflows/ci.yml`).
+
+### Сквозной тест в браузере (необязательно)
+
+Сквозной сценарий на Playwright проходит весь путь заявки через интерфейс: создание, документ,
+оплата, отправка, возврат оператором на доработку, повторная отправка без оплаты, одобрение.
+ТЗ его не требует, поэтому он **не входит в `docker compose up`** и запускается отдельно.
+
+Вариант 1 — в контейнере. Первая сборка скачивает образ с Chromium (~1,9 ГБ), поэтому занимает
+время; сам тест идёт около 30 секунд:
+
+```bash
 docker compose -f docker-compose.yml -f docker-compose.e2e.yml run --rm --build e2e
-# после него вернуть обычные настройки (нестабильный шлюз)
+# вернуть обычные настройки (тест переключает шлюз оплаты на стабильный)
 docker compose up -d --build
 ```
 
-Сквозной тест можно запустить и без контейнера — в установленном Google Chrome
-(стек при этом поднят с настройками из `docker-compose.e2e.yml`):
+Вариант 2 — без скачивания браузера, в установленном Google Chrome (нужен Node.js):
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build backend frontend
 cd e2e && npm ci
 E2E_BASE_URL=http://host.docker.internal:3000 PW_CHANNEL=chrome npx playwright test
+cd .. && docker compose up -d --build
 ```
-
-Frontend проверяется линтером и сборкой: `cd frontend && npm ci && npm run lint && npm run build`.
-Те же проверки backend и frontend запускаются в GitHub Actions (`.github/workflows/ci.yml`).
 
 ---
 
@@ -89,7 +101,7 @@ Frontend проверяется линтером и сборкой: `cd frontend
 - Роли заявителя и оператора; заявитель видит только свои заявки — это проверяется на сервере.
 - История: по каждой заявке видно, кто, когда и с каким комментарием менял статус.
 - Единый формат ошибок API с сообщениями на русском.
-- Тесты: 108 unit, 43 интеграционных, сквозной сценарий в браузере.
+- Тесты: 108 unit, 43 интеграционных; дополнительно — необязательный сквозной сценарий в браузере.
 
 ## Что не сделано и известные ограничения
 
@@ -227,7 +239,7 @@ store всю сессию. Все запросы идут через один ax
 ```
 .
 ├─ docker-compose.yml        БД, backend, frontend — `docker compose up`
-├─ docker-compose.e2e.yml    добавляет контейнер Playwright для сквозного теста
+├─ docker-compose.e2e.yml    необязательный: контейнер Playwright для сквозного теста
 ├─ .env.example              настройки по умолчанию для локального запуска
 ├─ backend/
 │  ├─ alembic/versions/      миграции, включая справочник услуг
@@ -248,7 +260,7 @@ store всю сессию. Все запросы идут через один ax
 │  ├─ features/              auth, applicant, operator
 │  ├─ components/            общие компоненты
 │  └─ lib/                   валидация, форматирование, статусы
-└─ e2e/                      сквозной сценарий Playwright
+└─ e2e/                      необязательный сквозной сценарий Playwright
 ```
 
 ## Основные настройки (`.env`)
