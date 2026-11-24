@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
@@ -45,6 +46,16 @@ class Settings(BaseSettings):
 
     # Каталог для загруженных документов. В Docker это именованный том.
     upload_dir: str = "uploads"
+
+    # Заглушка платёжного шлюза: flaky — с задержками и ошибками, stable — без сбоев
+    payment_gateway: Literal["flaky", "stable"] = "flaky"
+    payment_failure_rate: float = 0.2
+    payment_delay_min_seconds: float = 0.3
+    payment_delay_max_seconds: float = 4.0
+    payment_long_delay_rate: float = 0.1
+    payment_long_delay_seconds: float = 10.0
+    # дольше этого backend шлюз не ждёт и считает попытку неудачной
+    payment_gateway_timeout_seconds: float = 15.0
 
     # Адреса фронтенда через запятую, которым разрешено обращаться к API из браузера
     cors_origins: str
