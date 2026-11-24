@@ -89,7 +89,7 @@ export function MyApplicationsPage() {
                   <Table.Tr>
                     <Table.Th>Услуга</Table.Th>
                     <Table.Th>Создана</Table.Th>
-                    <Table.Th>Статус</Table.Th>
+                    <Table.Th w={190}>Статус</Table.Th>
                     <Table.Th>Что дальше</Table.Th>
                     <Table.Th w={40} />
                   </Table.Tr>
