@@ -8,6 +8,7 @@ import { NewApplicationPage } from '../features/applicant/NewApplicationPage';
 import { LoginPage } from '../features/auth/LoginPage';
 import { HomeRedirect, RequireRole } from '../features/auth/RequireRole';
 import { QueuePage } from '../features/operator/QueuePage';
+import { ReviewPage } from '../features/operator/ReviewPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <HomeRedirect /> },
@@ -32,7 +33,10 @@ export const router = createBrowserRouter([
     children: [
       {
         element: <AppLayout />,
-        children: [{ path: '/operator/applications', element: <QueuePage /> }],
+        children: [
+          { path: '/operator/applications', element: <QueuePage /> },
+          { path: '/operator/applications/:id', element: <ReviewPage /> },
+        ],
       },
     ],
   },
