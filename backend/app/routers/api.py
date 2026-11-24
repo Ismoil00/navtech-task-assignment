@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.routers import applications, auth, health, service_types
+from app.routers import applications, auth, health, operator, service_types
 from app.routers.deps import get_current_user
 
 
@@ -18,6 +18,7 @@ def build_api_router() -> APIRouter:
     protected.include_router(auth.protected_router)
     protected.include_router(service_types.router)
     protected.include_router(applications.router)
+    protected.include_router(operator.router)
 
     api.include_router(protected)
     return api

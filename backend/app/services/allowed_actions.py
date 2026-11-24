@@ -26,3 +26,10 @@ def for_applicant(application: Application) -> list[AllowedAction]:
             for action in allowed_transitions(application.status, UserRole.APPLICANT)
         ]
     return actions
+
+
+def for_operator(application: Application) -> list[AllowedAction]:
+    return [
+        AllowedAction(action.value)
+        for action in allowed_transitions(application.status, UserRole.OPERATOR)
+    ]
