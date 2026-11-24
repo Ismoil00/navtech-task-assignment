@@ -1,4 +1,5 @@
 import asyncio
+import enum
 import random
 import uuid
 from collections.abc import Awaitable, Callable
@@ -11,38 +12,59 @@ _FAILURE_REASONS = (
     "Недостаточно средств на карте",
 )
 
+# обычное время ответа шлюза (успех или отказ), секунды
+_REGULAR_LATENCY = (0.3, 1.0)
+
+
+class Outcome(enum.Enum):
+    SUCCESS = "success"
+    DELAY = "delay"  # успешный ответ, но с долгой задержкой
+    FAILURE = "failure"
+
 
 class FlakyMockGateway:
-    """Заглушка, которая ведёт себя как настоящий нестабильный шлюз.
+    """Заглушка нестабильного шлюза: часть оплат отвечает с задержкой, часть — ошибкой.
 
-    Каждое списание отвечает с задержкой. Часть запросов отвечает очень долго —
-    дольше, чем ждёт фронтенд, чтобы проверить сценарий «повтор после таймаута».
-    Часть запросов завершается ошибкой. Все вероятности задаются в .env.
+    Исходы выдаются сериями по 10 оплат. В каждой серии ровно столько отказов и задержек,
+    сколько задано долями в .env (по умолчанию 3 отказа, 3 задержки, 4 быстрых успеха),
+    порядок внутри серии случайный. Так доли соблюдаются и на коротком ручном прогоне,
+    а не только «в среднем на тысяче оплат».
     """
+
+    SERIES_SIZE = 10
 
     def __init__(
         self,
         *,
         failure_rate: float,
+        delay_rate: float,
         min_delay: float,
         max_delay: float,
-        long_delay_rate: float,
-        long_delay: float,
         rng: random.Random | None = None,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ) -> None:
-        self._failure_rate = failure_rate
+        failures = round(failure_rate * self.SERIES_SIZE)
+        delays = round(delay_rate * self.SERIES_SIZE)
+        successes = self.SERIES_SIZE - failures - delays
+        if failures < 0 or delays < 0 or successes < 0:
+            raise ValueError("Доли отказов и задержек должны быть от 0 до 1 и в сумме не больше 1")
+        self._series = (
+            [Outcome.FAILURE] * failures + [Outcome.DELAY] * delays + [Outcome.SUCCESS] * successes
+        )
+        self._pending: list[Outcome] = []
         self._min_delay = min_delay
         self._max_delay = max_delay
-        self._long_delay_rate = long_delay_rate
-        self._long_delay = long_delay
         # генератор и sleep подставляются в тестах, чтобы поведение было воспроизводимым
         self._rng = rng or random.Random()
         self._sleep = sleep
 
     async def charge(self, payment_id: uuid.UUID, amount: int, currency: str) -> ChargeResult:
-        await self._sleep(self._next_delay())
-        if self._rng.random() < self._failure_rate:
+        outcome = self.next_outcome()
+        if outcome is Outcome.DELAY:
+            await self._sleep(self._rng.uniform(self._min_delay, self._max_delay))
+        else:
+            await self._sleep(self._rng.uniform(*_REGULAR_LATENCY))
+        if outcome is Outcome.FAILURE:
             raise PaymentGatewayError(self._rng.choice(_FAILURE_REASONS))
         return ChargeResult(provider_ref=f"mock-{uuid.uuid4().hex[:16]}")
 
@@ -50,7 +72,8 @@ class FlakyMockGateway:
         # сбои имитируются только при списании; возврат выполняется сразу
         return None
 
-    def _next_delay(self) -> float:
-        if self._rng.random() < self._long_delay_rate:
-            return self._long_delay
-        return self._rng.uniform(self._min_delay, self._max_delay)
+    def next_outcome(self) -> Outcome:
+        if not self._pending:
+            self._pending = self._series.copy()
+            self._rng.shuffle(self._pending)
+        return self._pending.pop()

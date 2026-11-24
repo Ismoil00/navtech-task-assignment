@@ -1,11 +1,14 @@
 """Unit-тесты заглушек платёжного шлюза.
 
-Что проверяется: нестабильная заглушка всегда отвечает с задержкой, часть
-ответов очень долгие, часть — отказы с причиной; стабильная всегда успешна.
+Что проверяется: нестабильная заглушка в каждой серии из 10 оплат даёт ровно
+3 отказа, 3 ответа с задержкой и 4 быстрых успеха в случайном порядке, у отказа
+всегда есть причина; стабильная всегда успешна.
 """
 
 import random
 import uuid
+
+import pytest
 
 from app.integrations.payment_gateway import (
     FlakyMockGateway,
@@ -13,7 +16,7 @@ from app.integrations.payment_gateway import (
     StableMockGateway,
 )
 
-MIN_DELAY, MAX_DELAY, LONG_DELAY = 0.3, 4.0, 10.0
+MIN_DELAY, MAX_DELAY = 5.0, 12.0
 
 
 class RecordingSleep:
@@ -26,52 +29,74 @@ class RecordingSleep:
         self.delays.append(seconds)
 
 
-def make_flaky(sleep: RecordingSleep, failure_rate: float = 0.2) -> FlakyMockGateway:
+def make_flaky(
+    sleep: RecordingSleep, failure_rate: float = 0.3, delay_rate: float = 0.3, seed: int = 42
+) -> FlakyMockGateway:
     return FlakyMockGateway(
         failure_rate=failure_rate,
+        delay_rate=delay_rate,
         min_delay=MIN_DELAY,
         max_delay=MAX_DELAY,
-        long_delay_rate=0.1,
-        long_delay=LONG_DELAY,
-        rng=random.Random(42),  # фиксированный seed — результат воспроизводим
+        rng=random.Random(seed),  # фиксированный seed — результат воспроизводим
         sleep=sleep,
     )
 
 
 async def charge_many(gateway: FlakyMockGateway | StableMockGateway, count: int) -> list[str]:
+    """Исход каждой оплаты: error, delay (успех после долгой задержки) или ok."""
+    sleep = getattr(gateway, "_sleep", None)
     outcomes = []
     for _ in range(count):
         try:
             await gateway.charge(uuid.uuid4(), 5000, "TJS")
-            outcomes.append("ok")
+            delayed = isinstance(sleep, RecordingSleep) and sleep.delays[-1] >= MIN_DELAY
+            outcomes.append("delay" if delayed else "ok")
         except PaymentGatewayError as error:
             assert error.reason  # у отказа всегда есть причина для пользователя
             outcomes.append("error")
     return outcomes
 
 
-async def test_flaky_gateway_sometimes_fails() -> None:
-    outcomes = await charge_many(make_flaky(RecordingSleep()), 200)
+async def test_every_series_of_ten_has_exact_split() -> None:
+    outcomes = await charge_many(make_flaky(RecordingSleep()), 100)
 
-    assert "ok" in outcomes
-    assert "error" in outcomes
-    assert 0.1 < outcomes.count("error") / len(outcomes) < 0.3
+    for start in range(0, 100, 10):
+        series = outcomes[start : start + 10]
+        assert (series.count("error"), series.count("delay"), series.count("ok")) == (3, 3, 4)
 
 
-async def test_flaky_gateway_always_answers_with_delay() -> None:
+async def test_order_inside_series_is_random() -> None:
+    first = await charge_many(make_flaky(RecordingSleep(), seed=1), 10)
+    second = await charge_many(make_flaky(RecordingSleep(), seed=2), 10)
+
+    assert sorted(first) == sorted(second)
+    assert first != second
+
+
+async def test_delays_are_long_and_other_answers_are_quick() -> None:
     sleep = RecordingSleep()
-    await charge_many(make_flaky(sleep), 200)
+    outcomes = await charge_many(make_flaky(sleep), 50)
 
-    assert len(sleep.delays) == 200
-    regular = [delay for delay in sleep.delays if delay != LONG_DELAY]
-    assert all(MIN_DELAY <= delay <= MAX_DELAY for delay in regular)
-    # часть ответов приходит дольше, чем ждёт фронтенд
-    assert LONG_DELAY in sleep.delays
+    for outcome, delay in zip(outcomes, sleep.delays, strict=True):
+        if outcome == "delay":
+            assert MIN_DELAY <= delay <= MAX_DELAY
+        else:
+            assert delay < MIN_DELAY
 
 
-async def test_failure_rate_controls_errors() -> None:
-    assert set(await charge_many(make_flaky(RecordingSleep(), failure_rate=0), 50)) == {"ok"}
-    assert set(await charge_many(make_flaky(RecordingSleep(), failure_rate=1), 50)) == {"error"}
+async def test_rates_are_configurable() -> None:
+    no_failures = await charge_many(make_flaky(RecordingSleep(), failure_rate=0), 20)
+    only_failures = await charge_many(
+        make_flaky(RecordingSleep(), failure_rate=1, delay_rate=0), 20
+    )
+
+    assert "error" not in no_failures
+    assert set(only_failures) == {"error"}
+
+
+def test_rates_over_one_are_rejected() -> None:
+    with pytest.raises(ValueError):
+        make_flaky(RecordingSleep(), failure_rate=0.7, delay_rate=0.5)
 
 
 async def test_stable_gateway_always_succeeds() -> None:

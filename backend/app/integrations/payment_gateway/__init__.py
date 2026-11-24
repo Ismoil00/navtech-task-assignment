@@ -8,16 +8,18 @@ from app.integrations.payment_gateway.stable import StableMockGateway
 
 @cache
 def get_payment_gateway() -> PaymentGateway:
-    """Шлюз выбирается настройкой PAYMENT_GATEWAY: flaky (по умолчанию) или stable."""
+    """Шлюз выбирается настройкой PAYMENT_GATEWAY: flaky (по умолчанию) или stable.
+
+    stable включает только сквозной тест, чтобы случайные отказы не роняли его.
+    """
     settings = get_settings()
     if settings.payment_gateway == "stable":
         return StableMockGateway()
     return FlakyMockGateway(
         failure_rate=settings.payment_failure_rate,
+        delay_rate=settings.payment_delay_rate,
         min_delay=settings.payment_delay_min_seconds,
         max_delay=settings.payment_delay_max_seconds,
-        long_delay_rate=settings.payment_long_delay_rate,
-        long_delay=settings.payment_long_delay_seconds,
     )
 
 

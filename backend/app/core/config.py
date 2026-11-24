@@ -2,6 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
 
@@ -47,13 +48,15 @@ class Settings(BaseSettings):
     # Каталог для загруженных документов. В Docker это именованный том.
     upload_dir: str = "uploads"
 
-    # Заглушка платёжного шлюза: flaky — с задержками и ошибками, stable — без сбоев
+    # Заглушка платёжного шлюза: flaky — с задержками и ошибками (по умолчанию),
+    # stable — без сбоев, включается только в сквозном тесте (docker-compose.e2e.yml)
     payment_gateway: Literal["flaky", "stable"] = "flaky"
-    payment_failure_rate: float = 0.2
-    payment_delay_min_seconds: float = 0.3
-    payment_delay_max_seconds: float = 4.0
-    payment_long_delay_rate: float = 0.1
-    payment_long_delay_seconds: float = 10.0
+    # доли исходов: 30% отказов, 30% ответов с задержкой, остальные 40% — быстрый успех
+    payment_failure_rate: float = Field(0.3, ge=0, le=1)
+    payment_delay_rate: float = Field(0.3, ge=0, le=1)
+    # длительность задержки, секунды (случайно в этом диапазоне)
+    payment_delay_min_seconds: float = 5.0
+    payment_delay_max_seconds: float = 12.0
     # дольше этого backend шлюз не ждёт и считает попытку неудачной
     payment_gateway_timeout_seconds: float = 15.0
 
