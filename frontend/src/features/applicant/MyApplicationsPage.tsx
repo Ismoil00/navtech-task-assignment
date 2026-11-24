@@ -13,6 +13,7 @@ import { IconChevronRight, IconPlus } from '@tabler/icons-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
+import { ALWAYS_FRESH } from '../../api/baseApi';
 import { useListMyApplicationsQuery } from '../../api/applicationsApi';
 import type { ApplicationStatus } from '../../api/types';
 import { PageHeader } from '../../components/PageHeader';
@@ -32,7 +33,7 @@ export function MyApplicationsPage() {
     status,
     page,
     pageSize: PAGE_SIZE,
-  });
+  }, ALWAYS_FRESH);
 
   const newButton = (
     <Button component={Link} to={routes.newApplication} leftSection={<IconPlus size={18} />}>

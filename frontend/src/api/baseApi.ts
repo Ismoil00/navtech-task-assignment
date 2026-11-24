@@ -28,6 +28,13 @@ const axiosBaseQuery: BaseQueryFn<HttpArgs, unknown, ApiError> = async (args) =>
   }
 };
 
+/**
+ * Опции для запросов заявок. Статус меняет и другая сторона (оператор или заявитель),
+ * поэтому при открытии страницы и возврате на вкладку данные берутся с сервера,
+ * а не из кеша. Справочник услуг их не использует: он грузится один раз при входе.
+ */
+export const ALWAYS_FRESH = { refetchOnMountOrArgChange: true, refetchOnFocus: true } as const;
+
 /** Общий API-слайс. Эндпоинты добавляются в файлах разделов через injectEndpoints. */
 export const api = createApi({
   reducerPath: 'api',

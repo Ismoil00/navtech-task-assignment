@@ -2,6 +2,7 @@ import { Group, Pagination, Paper, Select, Skeleton, Stack, Table, Text } from '
 import { IconChevronRight } from '@tabler/icons-react';
 import { useNavigate, useSearchParams } from 'react-router';
 
+import { ALWAYS_FRESH } from '../../api/baseApi';
 import { useListQueueQuery } from '../../api/operatorApi';
 import { useGetServiceTypesQuery } from '../../api/serviceTypesApi';
 import type { ApplicationStatus } from '../../api/types';
@@ -30,7 +31,7 @@ export function QueuePage() {
     serviceTypeId,
     page,
     pageSize: PAGE_SIZE,
-  });
+  }, ALWAYS_FRESH);
 
   const updateParams = (changes: Record<string, string | null>) => {
     const next = new URLSearchParams(params);

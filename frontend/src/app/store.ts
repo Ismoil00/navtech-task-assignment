@@ -1,4 +1,5 @@
 import { combineSlices, configureStore, createListenerMiddleware } from '@reduxjs/toolkit';
+import { setupListeners } from '@reduxjs/toolkit/query';
 
 import { api } from '../api/baseApi';
 import { connectSession } from '../api/http';
@@ -30,6 +31,9 @@ export const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefault) => getDefault().prepend(listeners.middleware).concat(api.middleware),
 });
+
+// нужно для refetchOnFocus: перезапрос при возврате на вкладку
+setupListeners(store.dispatch);
 
 connectSession({
   getAccessToken: () => store.getState().auth.accessToken,

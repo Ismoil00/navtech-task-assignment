@@ -2,6 +2,7 @@ import { Anchor, Badge, Grid, Group, Paper, Skeleton, Stack, Text, Title } from 
 import { IconArrowLeft } from '@tabler/icons-react';
 import { Link, useParams } from 'react-router';
 
+import { ALWAYS_FRESH } from '../../api/baseApi';
 import { useGetOperatorApplicationQuery } from '../../api/operatorApi';
 import type { Application } from '../../api/types';
 import { ApplicationDetails } from '../../components/ApplicationDetails';
@@ -17,7 +18,7 @@ import { DecisionPanel } from './DecisionPanel';
 
 export function ReviewPage() {
   const { id = '' } = useParams();
-  const { data: application, error, isLoading, refetch } = useGetOperatorApplicationQuery(id);
+  const { data: application, error, isLoading, refetch } = useGetOperatorApplicationQuery(id, ALWAYS_FRESH);
 
   if (isLoading) {
     return (

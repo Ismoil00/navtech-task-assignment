@@ -9,6 +9,7 @@ import {
   useGetMyApplicationQuery,
   useUpdateApplicationMutation,
 } from '../../api/applicationsApi';
+import { ALWAYS_FRESH } from '../../api/baseApi';
 import type { Application } from '../../api/types';
 import { ApplicationDetails } from '../../components/ApplicationDetails';
 import { PageHeader } from '../../components/PageHeader';
@@ -26,7 +27,7 @@ import { SubmitSection } from './SubmitSection';
 
 export function ApplicationPage() {
   const { id = '' } = useParams();
-  const { data: application, error, isLoading, refetch } = useGetMyApplicationQuery(id);
+  const { data: application, error, isLoading, refetch } = useGetMyApplicationQuery(id, ALWAYS_FRESH);
 
   if (isLoading) {
     return (
