@@ -4,11 +4,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 
-from app.domain.enums import ApplicationStatus
-from app.routers.deps import OperatorServiceDep, require_operator
+from app.domain.enums import ApplicationAction, ApplicationStatus
+from app.routers.deps import OperatorDep, OperatorServiceDep, require_operator
 from app.routers.files import document_response
 from app.schemas.application import ApplicationListItem, ApplicationRead
 from app.schemas.common import Page
+from app.schemas.decision import DecisionRequest
 
 # Кабинет оператора: роль проверяется для всех эндпоинтов роутера
 router = APIRouter(
@@ -40,3 +41,16 @@ async def get_application(application_id: uuid.UUID, service: OperatorServiceDep
 @router.get("/{application_id}/file", response_class=StreamingResponse)
 async def download_document(application_id: uuid.UUID, service: OperatorServiceDep):
     return document_response(*await service.download(application_id))
+
+
+@router.post("/{application_id}/decision", response_model=ApplicationRead)
+async def decide(
+    application_id: uuid.UUID,
+    payload: DecisionRequest,
+    user: OperatorDep,
+    service: OperatorServiceDep,
+):
+    result = await service.decide(
+        user, application_id, ApplicationAction(payload.action), payload.comment
+    )
+    return ApplicationRead.build(*result)

@@ -42,6 +42,14 @@ class PaymentRepository:
             )
         )
 
+    async def get_succeeded(self, application_id: uuid.UUID) -> Payment | None:
+        return await self._session.scalar(
+            select(Payment).where(
+                Payment.application_id == application_id,
+                Payment.status == PaymentStatus.SUCCEEDED,
+            )
+        )
+
     async def has_succeeded(self, application_id: uuid.UUID) -> bool:
         return await self._exists(application_id, PaymentStatus.SUCCEEDED)
 

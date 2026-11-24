@@ -48,9 +48,11 @@ def get_payment_service(
 
 
 def get_operator_service(
-    session: SessionDep, storage: Annotated[FileStorage, Depends(get_file_storage)]
+    session: SessionDep,
+    storage: Annotated[FileStorage, Depends(get_file_storage)],
+    gateway: Annotated[PaymentGateway, Depends(get_payment_gateway)],
 ) -> OperatorService:
-    return OperatorService(session, storage)
+    return OperatorService(session, storage, gateway)
 
 
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
