@@ -6,6 +6,7 @@ import { http } from '../../api/http';
 import type { Application } from '../../api/types';
 import { useAppDispatch } from '../../app/hooks';
 import { notifySuccess } from '../../lib/notify';
+import { newUuid } from '../../lib/uuid';
 
 /** idle — ждём нажатия; processing — запрос отправлен; slow — шлюз отвечает долго, проверяем статус. */
 export type PaymentPhase = 'idle' | 'processing' | 'slow' | 'failed';
@@ -34,7 +35,7 @@ export function usePayment(applicationId: string) {
   const pay = useCallback(async () => {
     if (runningRef.current) return; // повторный клик во время оплаты игнорируем
     runningRef.current = true;
-    keyRef.current ??= crypto.randomUUID();
+    keyRef.current ??= newUuid();
     setError(null);
     setPhase('processing');
     const startedAt = Date.now();
