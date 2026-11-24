@@ -6,8 +6,8 @@ import phonenumbers
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
 
 from app.core.config import get_settings
-from app.domain.enums import AllowedAction, ApplicationStatus, UserRole
-from app.models import Application
+from app.domain.enums import AllowedAction, ApplicationStatus, PaymentStatus, UserRole
+from app.models import Application, Payment
 
 # --- Валидация полей заявки (те же правила повторяет фронтенд) ---
 
@@ -100,6 +100,27 @@ class AttachmentRead(BaseModel):
     created_at: datetime
 
 
+class PaymentRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    status: PaymentStatus
+    amount: int  # в дирамах
+    currency: str
+    failure_reason: str | None
+    created_at: datetime
+    updated_at: datetime
+    refunded_at: datetime | None
+
+
+def _current_payment(payments: list[Payment]) -> Payment | None:
+    """Платёж для показа: «живой» (в обработке, успешный, возвращённый), иначе последний."""
+    active = [payment for payment in payments if payment.status != PaymentStatus.FAILED]
+    if active:
+        return active[-1]
+    return payments[-1] if payments else None
+
+
 class HistoryActor(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -135,11 +156,14 @@ class ApplicationRead(ApplicationListItem):
     comment: str | None
     decided_at: datetime | None
     attachment: AttachmentRead | None
+    payment: PaymentRead | None = None
     history: list[StatusHistoryRead]
     allowed_actions: list[AllowedAction] = []
 
     @classmethod
     def build(cls, application: Application, allowed_actions: list[AllowedAction]) -> Self:
         result = cls.model_validate(application)
+        payment = _current_payment(application.payments)
+        result.payment = PaymentRead.model_validate(payment) if payment else None
         result.allowed_actions = allowed_actions
         return result

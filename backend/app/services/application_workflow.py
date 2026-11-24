@@ -10,6 +10,12 @@ from app.repositories.attachment_repository import AttachmentRepository
 from app.repositories.payment_repository import PaymentRepository
 from app.repositories.status_history_repository import StatusHistoryRepository
 
+
+class PaymentInProgressError(ConflictError):
+    code = "PAYMENT_IN_PROGRESS"
+    message = "Идёт оплата — дождитесь результата"
+
+
 # Статусы до отправки (или повторной отправки), в которых действуют требования ТЗ:
 # без файла не оплатить и не отправить, без оплаты не отправить.
 _BEFORE_SUBMISSION = frozenset(
@@ -61,6 +67,11 @@ class ApplicationWorkflow:
             )
         )
         return transition
+
+    async def ensure_no_payment_in_progress(self, application: Application) -> None:
+        """Пока шлюз обрабатывает оплату, заявку нельзя менять: сумма зависит от услуги."""
+        if await self._payments.has_processing(application.id):
+            raise PaymentInProgressError()
 
     async def check_requirements(self, application: Application, action: ApplicationAction) -> None:
         """Условия ТЗ с понятной причиной отказа вместо общего «недопустимый переход»."""

@@ -1,14 +1,15 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Header, Query, Response, UploadFile, status
 from fastapi.responses import StreamingResponse
 
-from app.domain.enums import ApplicationStatus
+from app.domain.enums import ApplicationStatus, PaymentStatus
 from app.routers.deps import (
     ApplicantDep,
     ApplicationServiceDep,
     AttachmentServiceDep,
+    PaymentServiceDep,
     require_applicant,
 )
 from app.routers.files import document_response, read_upload
@@ -63,6 +64,41 @@ async def update_application(
     service: ApplicationServiceDep,
 ):
     return ApplicationRead.build(*await service.update(user, application_id, payload))
+
+
+# Ключ идемпотентности: фронтенд создаёт его на попытку оплаты и повторяет с ним запрос
+IdempotencyKey = Annotated[
+    str,
+    Header(
+        alias="Idempotency-Key",
+        min_length=8,
+        max_length=64,
+        pattern=r"^[A-Za-z0-9_-]+$",
+        description="Уникальный ключ попытки оплаты (например, UUID)",
+    ),
+]
+
+
+@router.post(
+    "/{application_id}/payments",
+    response_model=ApplicationRead,
+    responses={
+        202: {"description": "Шлюз ещё обрабатывает оплату — запросите заявку позже"},
+        409: {"description": "Оплата уже выполняется или недоступна в этом статусе"},
+        502: {"description": "Шлюз отказал — можно повторить с новым ключом"},
+    },
+)
+async def pay_application(
+    application_id: uuid.UUID,
+    idempotency_key: IdempotencyKey,
+    response: Response,
+    user: ApplicantDep,
+    service: PaymentServiceDep,
+):
+    outcome = await service.pay(user, application_id, idempotency_key)
+    if outcome.payment.status == PaymentStatus.PROCESSING:
+        response.status_code = status.HTTP_202_ACCEPTED
+    return ApplicationRead.build(outcome.application, outcome.allowed_actions)
 
 
 @router.post("/{application_id}/submit", response_model=ApplicationRead)

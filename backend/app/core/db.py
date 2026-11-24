@@ -13,3 +13,8 @@ SessionFactory = async_sessionmaker(engine, expire_on_commit=False)
 async def get_session() -> AsyncIterator[AsyncSession]:
     async with SessionFactory() as session:
         yield session
+
+
+def get_session_factory() -> async_sessionmaker[AsyncSession]:
+    """Для работы, которая должна пережить запрос (завершение оплаты)."""
+    return SessionFactory

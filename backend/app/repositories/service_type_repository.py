@@ -18,6 +18,9 @@ class ServiceTypeRepository:
         )
         return result.all()
 
+    async def get(self, service_type_id: int) -> ServiceType | None:
+        return await self._session.get(ServiceType, service_type_id)
+
     async def get_active(self, service_type_id: int) -> ServiceType | None:
         return await self._session.scalar(
             select(ServiceType).where(

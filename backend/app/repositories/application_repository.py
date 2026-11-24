@@ -33,6 +33,14 @@ class ApplicationRepository:
             query = query.with_for_update()
         return await self._session.scalar(query)
 
+    async def get_by_id(
+        self, application_id: uuid.UUID, *, for_update: bool = False
+    ) -> Application | None:
+        query = select(Application).where(Application.id == application_id)
+        if for_update:
+            query = query.with_for_update()
+        return await self._session.scalar(query)
+
     async def get_details(self, application_id: uuid.UUID) -> Application | None:
         """Заявка со всеми связями для карточки (услуга, файл, платежи, история)."""
         query = (

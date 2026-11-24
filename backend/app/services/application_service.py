@@ -76,6 +76,7 @@ class ApplicationService:
                 f"Заявку в статусе «{STATUS_LABELS[application.status]}» изменить нельзя",
                 code="APPLICATION_NOT_EDITABLE",
             )
+        await self._workflow.ensure_no_payment_in_progress(application)
 
         changes = data.model_dump(exclude_unset=True)
         new_service_type = changes.get("service_type_id", application.service_type_id)
@@ -110,6 +111,7 @@ class ApplicationService:
             raise ConflictError(
                 "Удалить можно только неоплаченный черновик", code="APPLICATION_NOT_DELETABLE"
             )
+        await self._workflow.ensure_no_payment_in_progress(application)
         # мягкое удаление: попытки оплаты и история остаются в базе
         application.deleted_at = datetime.now(UTC)
         await self._session.commit()

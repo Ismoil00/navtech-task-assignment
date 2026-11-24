@@ -3,15 +3,17 @@ from typing import Annotated
 
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.core.db import get_session
+from app.core.db import get_session, get_session_factory
 from app.core.errors import ForbiddenError, UnauthorizedError
 from app.domain.enums import UserRole
+from app.integrations.payment_gateway import PaymentGateway, get_payment_gateway
 from app.models import User
 from app.services.application_service import ApplicationService
 from app.services.attachment_service import AttachmentService
 from app.services.auth_service import AuthService
+from app.services.payment_service import PaymentService
 from app.services.service_type_service import ServiceTypeService
 from app.storage import FileStorage, get_file_storage
 
@@ -36,10 +38,19 @@ def get_attachment_service(
     return AttachmentService(session, storage)
 
 
+def get_payment_service(
+    session: SessionDep,
+    session_factory: Annotated[async_sessionmaker[AsyncSession], Depends(get_session_factory)],
+    gateway: Annotated[PaymentGateway, Depends(get_payment_gateway)],
+) -> PaymentService:
+    return PaymentService(session, session_factory, gateway)
+
+
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 ServiceTypeServiceDep = Annotated[ServiceTypeService, Depends(get_service_type_service)]
 ApplicationServiceDep = Annotated[ApplicationService, Depends(get_application_service)]
 AttachmentServiceDep = Annotated[AttachmentService, Depends(get_attachment_service)]
+PaymentServiceDep = Annotated[PaymentService, Depends(get_payment_service)]
 
 # auto_error=False: отсутствие токена отдаём в нашем формате ошибок, а не стандартным 403
 _bearer = HTTPBearer(auto_error=False)

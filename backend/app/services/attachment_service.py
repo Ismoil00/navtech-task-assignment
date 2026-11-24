@@ -12,6 +12,7 @@ from app.models import Application, Attachment, User
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.attachment_repository import AttachmentRepository
 from app.services import allowed_actions
+from app.services.application_workflow import ApplicationWorkflow
 from app.storage import FileStorage
 
 
@@ -42,6 +43,7 @@ class AttachmentService:
                 f"В статусе «{STATUS_LABELS[application.status]}» документ заменить нельзя",
                 code="APPLICATION_NOT_EDITABLE",
             )
+        await ApplicationWorkflow(self._session).ensure_no_payment_in_progress(application)
 
         name = safe_filename(filename)
         validator = DocumentValidator(name)
