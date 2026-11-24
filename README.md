@@ -50,13 +50,16 @@ docker compose run --rm backend pytest
 ```
 
 Frontend проверяется линтером и сборкой: `cd frontend && npm ci && npm run lint && npm run build`.
-Те же проверки backend и frontend запускаются в GitHub Actions (`.github/workflows/ci.yml`).
+Те же проверки backend и frontend запускаются в GitHub Actions (`.github/workflows/ci.yml`)
+на каждый push и pull request.
 
 ### Сквозной тест в браузере (необязательно)
 
 Сквозной сценарий на Playwright проходит весь путь заявки через интерфейс: создание, документ,
 оплата, отправка, возврат оператором на доработку, повторная отправка без оплаты, одобрение.
 ТЗ его не требует, поэтому он **не входит в `docker compose up`** и запускается отдельно.
+В GitHub Actions он идёт отдельной задачей при push в `main` и по ручному запуску (Actions →
+CI → Run workflow); при ошибке к запуску прикладываются отчёт Playwright и скриншоты.
 
 Вариант 1 — в контейнере. Первая сборка скачивает образ с Chromium (~1,9 ГБ), поэтому занимает
 время; сам тест идёт около 30 секунд:
