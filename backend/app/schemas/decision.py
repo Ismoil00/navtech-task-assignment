@@ -19,7 +19,7 @@ class DecisionRequest(BaseModel):
     def _required_for_reject_and_return(
         cls, comment: str | None, info: ValidationInfo
     ) -> str | None:
-        # по ТЗ при отклонении и возврате на доработку комментарий обязателен
+        # при отклонении и возврате заявитель должен увидеть причину
         if info.data.get("action") in ("reject", "return") and (
             comment is None or len(comment) < _COMMENT_MIN_LENGTH
         ):

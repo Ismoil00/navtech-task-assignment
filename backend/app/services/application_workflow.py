@@ -16,7 +16,7 @@ class PaymentInProgressError(ConflictError):
     message = "Идёт оплата — дождитесь результата"
 
 
-# Статусы до отправки (или повторной отправки), в которых действуют требования ТЗ:
+# Статусы до отправки (или повторной отправки), в которых действуют предусловия:
 # без файла не оплатить и не отправить, без оплаты не отправить.
 _BEFORE_SUBMISSION = frozenset(
     {ApplicationStatus.DRAFT, ApplicationStatus.PAID, ApplicationStatus.RETURNED}
@@ -74,7 +74,7 @@ class ApplicationWorkflow:
             raise PaymentInProgressError()
 
     async def check_requirements(self, application: Application, action: ApplicationAction) -> None:
-        """Условия ТЗ с понятной причиной отказа вместо общего «недопустимый переход»."""
+        """Предусловия перехода с понятной причиной отказа вместо общего «недопустимый переход»."""
         if application.status not in _BEFORE_SUBMISSION:
             return
         needs_file = action in (ApplicationAction.PAY, ApplicationAction.SUBMIT)

@@ -7,7 +7,7 @@ import { STATUS_COLORS, STATUS_LABELS } from '../lib/statuses';
 
 const ROLE_LABELS = { applicant: 'заявитель', operator: 'оператор' } as const;
 
-/** История заявки по требованию ТЗ: кто и когда менял статус. */
+/** История заявки: кто, когда и с каким комментарием менял статус. */
 export function StatusTimeline({ history }: { history: HistoryEntry[] }) {
   return (
     <Paper withBorder p="lg">

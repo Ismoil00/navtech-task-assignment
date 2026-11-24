@@ -82,7 +82,7 @@ export function LoginPage() {
               Заполните заявку и приложите документ
             </List.Item>
             <List.Item icon={<FeatureIcon icon={<IconCreditCard size={18} />} />}>
-              Оплатите услугу — повторный клик не спишет деньги дважды
+              Оплатите услугу онлайн
             </List.Item>
             <List.Item icon={<FeatureIcon icon={<IconUserCheck size={18} />} />}>
               Оператор рассмотрит заявку и примет решение
