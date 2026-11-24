@@ -32,3 +32,6 @@ backend/uploads/
 *.swp
 .DS_Store
 Thumbs.db
+
+# Личные заметки по заданию
+plan.md
