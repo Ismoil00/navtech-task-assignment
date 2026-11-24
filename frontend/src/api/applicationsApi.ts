@@ -1,5 +1,12 @@
+import type { AppDispatch } from '../app/store';
 import { api } from './baseApi';
-import type { Application, ApplicationListItem, ApplicationStatus, Page } from './types';
+import type {
+  Application,
+  ApplicationInput,
+  ApplicationListItem,
+  ApplicationStatus,
+  Page,
+} from './types';
 
 export interface MyApplicationsParams {
   status?: ApplicationStatus | null;
@@ -20,7 +27,29 @@ export const applicationsApi = api.injectEndpoints({
       query: (id) => ({ url: `/applications/${id}` }),
       providesTags: (_result, _error, id) => [{ type: 'Application', id }],
     }),
+    createApplication: build.mutation<Application, ApplicationInput>({
+      query: (body) => ({ url: '/applications', method: 'POST', data: body }),
+      invalidatesTags: ['MyApplications'],
+    }),
+    updateApplication: build.mutation<Application, { id: string; changes: Partial<ApplicationInput> }>({
+      query: ({ id, changes }) => ({ url: `/applications/${id}`, method: 'PATCH', data: changes }),
+      invalidatesTags: (_result, _error, { id }) => [{ type: 'Application', id }, 'MyApplications'],
+    }),
   }),
 });
 
-export const { useListMyApplicationsQuery, useGetMyApplicationQuery } = applicationsApi;
+/**
+ * Кладёт заявку из ответа сервера в кеш карточки и обновляет список.
+ * Нужно для запросов, которые идут мимо RTK Query (загрузка файла, оплата).
+ */
+export function cacheApplication(dispatch: AppDispatch, application: Application): void {
+  dispatch(applicationsApi.util.upsertQueryData('getMyApplication', application.id, application));
+  dispatch(applicationsApi.util.invalidateTags(['MyApplications']));
+}
+
+export const {
+  useListMyApplicationsQuery,
+  useGetMyApplicationQuery,
+  useCreateApplicationMutation,
+  useUpdateApplicationMutation,
+} = applicationsApi;

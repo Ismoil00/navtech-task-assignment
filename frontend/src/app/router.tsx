@@ -4,7 +4,9 @@ import { createBrowserRouter } from 'react-router';
 import { AppLayout } from '../components/AppLayout';
 import { NotFoundPage } from '../components/NotFoundPage';
 import { LoginPage } from '../features/auth/LoginPage';
+import { ApplicationPage } from '../features/applicant/ApplicationPage';
 import { MyApplicationsPage } from '../features/applicant/MyApplicationsPage';
+import { NewApplicationPage } from '../features/applicant/NewApplicationPage';
 import { HomeRedirect, RequireRole } from '../features/auth/RequireRole';
 
 function Placeholder({ title }: { title: string }) {
@@ -21,7 +23,8 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: '/applications', element: <MyApplicationsPage /> },
-          { path: '/applications/new', element: <Placeholder title="Новая заявка" /> },
+          { path: '/applications/new', element: <NewApplicationPage /> },
+          { path: '/applications/:id', element: <ApplicationPage /> },
         ],
       },
     ],
