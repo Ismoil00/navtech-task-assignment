@@ -13,8 +13,12 @@ export const authApi = api.injectEndpoints({
     login: build.mutation<TokenResponse, LoginRequest>({
       query: (body) => ({ url: '/auth/login', method: 'POST', data: body }),
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
-        const { data } = await queryFulfilled;
-        dispatch(credentialsReceived(data));
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(credentialsReceived(data));
+        } catch {
+          // ошибку входа показывает форма (unwrap в LoginPage)
+        }
       },
     }),
     logout: build.mutation<void, void>({
