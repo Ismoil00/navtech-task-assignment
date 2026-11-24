@@ -19,6 +19,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8.3",
+    "pytest-asyncio>=0.25",
     "ruff>=0.8",
 ]
 
@@ -29,6 +30,10 @@ package = false
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-ra"
+asyncio_mode = "auto"
+# один цикл событий на весь прогон: пул соединений с БД живёт между тестами
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 
 [tool.ruff]
 line-length = 100
