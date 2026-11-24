@@ -44,8 +44,12 @@ export async function downloadDocument(url: string): Promise<void> {
   const link = document.createElement('a');
   link.href = objectUrl;
   link.download = filename;
+  // надёжнее для разных браузеров: ссылка находится в документе, а blob-адрес
+  // освобождается не сразу, а когда загрузка уже точно началась
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(objectUrl);
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
 }
 
 /** Открывает документ в новой вкладке (PDF и изображения браузер покажет сам). */
