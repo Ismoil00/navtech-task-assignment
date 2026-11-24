@@ -72,11 +72,17 @@ class FakeGateway:
         self.refunds: list[uuid.UUID] = []
         self.fail_with: str | None = None
         self._release: asyncio.Event | None = None
+        self._release_refunds: asyncio.Event | None = None
 
     def hold(self) -> asyncio.Event:
         """Следующие списания будут ждать, пока тест не вызовет .set()."""
         self._release = asyncio.Event()
         return self._release
+
+    def hold_refunds(self) -> asyncio.Event:
+        """Следующие возвраты будут ждать, пока тест не вызовет .set()."""
+        self._release_refunds = asyncio.Event()
+        return self._release_refunds
 
     async def charge(self, payment_id: uuid.UUID, amount: int, currency: str) -> ChargeResult:
         self.charges.append(payment_id)
@@ -88,6 +94,8 @@ class FakeGateway:
 
     async def refund(self, payment_id: uuid.UUID, provider_ref: str) -> None:
         self.refunds.append(payment_id)
+        if self._release_refunds is not None:
+            await self._release_refunds.wait()
 
 
 @pytest.fixture

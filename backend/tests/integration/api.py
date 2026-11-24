@@ -59,6 +59,30 @@ class Api:
     async def get(self, actor: Actor, application_id: str) -> httpx.Response:
         return await self.client.get(f"/api/applications/{application_id}", headers=actor.headers)
 
+    async def edit(self, actor: Actor, application_id: str, **changes: Any) -> httpx.Response:
+        return await self.client.patch(
+            f"/api/applications/{application_id}", json=changes, headers=actor.headers
+        )
+
+    async def decide(
+        self, operator: Actor, application_id: str, action: str, comment: str | None = None
+    ) -> httpx.Response:
+        return await self.client.post(
+            f"/api/operator/applications/{application_id}/decision",
+            json={"action": action, "comment": comment},
+            headers=operator.headers,
+        )
+
+    async def operator_get(self, operator: Actor, application_id: str) -> httpx.Response:
+        return await self.client.get(
+            f"/api/operator/applications/{application_id}", headers=operator.headers
+        )
+
+    async def queue(self, operator: Actor, **params: Any) -> httpx.Response:
+        return await self.client.get(
+            "/api/operator/applications", params=params, headers=operator.headers
+        )
+
     async def draft_with_file(self, actor: Actor, **overrides: Any) -> str:
         application = await self.create_application(actor, **overrides)
         response = await self.upload(actor, application["id"])
@@ -68,6 +92,12 @@ class Api:
     async def paid_application(self, actor: Actor, **overrides: Any) -> str:
         application_id = await self.draft_with_file(actor, **overrides)
         response = await self.pay(actor, application_id)
+        assert response.status_code == 200, response.text
+        return application_id
+
+    async def submitted_application(self, actor: Actor, **overrides: Any) -> str:
+        application_id = await self.paid_application(actor, **overrides)
+        response = await self.submit(actor, application_id)
         assert response.status_code == 200, response.text
         return application_id
 
